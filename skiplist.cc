@@ -12,8 +12,8 @@ struct Node {
 
     Node() = default;
     Node(K k, V v, int l) key(k), value(v), level(l) {
-        forward = new Node<K, V>* [l + 1];
-        for (int i = 0; i <= l; ++i) forward[i] = nullptr; 
+        forward = new Node<K, V>* [l];
+        for (int i = 0; i < l; ++i) forward[i] = nullptr; 
     }
     ~Node() {
         if (forward != nullptr) delete[] forward;
@@ -31,13 +31,13 @@ class SkipList {
 public:
     SkipList() size_(0), level_(0) { Initialize(); }
     ~SkipList() { Free(); }
+    Node<K, V>* Find(K key);
     bool Insert(K key, V value);
     bool Remove(K key);
-    Node<K, V>* Find(K key);
+    void SetRandom(unsigned int seed) { srand(seed); }
+    size_t size() const { return size_; }
 private:
     int RandomLevel();
-    void CreateNode(int level, Node<K, V>*& node);
-    void CreateNode(int level, K key, V value, Node<K, V>*& node);
     void Initialize();
     void Free();
 private:
@@ -54,21 +54,45 @@ void SkipList<K, V>::Initialize(){
 }
 
 template <typename K, typename V>
-void SkipList<K, V>::CreateNode(int level, Node<K, V>*& node) {
-
-}
-
-template <typename K, typename V>
 Node<K, V>* SkipList<K, V>::Find(K key) {
     Node<K, V>* cur = head_;
-    for (int i = level_; i >= 0; --i) {
+    for (int i = level_ - 1; i >= 0; --i) {
         while (cur->forward[i] && cur->forward[i]->key < key) {
             cur = cur->forward[i];
         }
     }
     cur = cur->forward[0];
-    if (cur && cur->key == key) return cur->value;
+    if (cur && cur->key == key) return cur;
     return nullptr; 
+}
+
+template <typename K, typename V>
+bool SkipList<K, V>::Insert(K key, V value) {
+    Node<K, V>* update[kMaxLevel];
+    Node<K, V>* cur = head_;
+    for (int i = level_ - 1; i >= 0; --i) {
+        while (cur->forward[i] && cur->forward[i]->key < key) {
+            cur = cur->forward[i];
+        }
+        update[i] = cur;
+    }
+    cur = cur->forward[0];
+    if (cur && cur->key == key) return false;
+    int node_level = RandomLevel();
+    while (node_level > level_) {
+        update[level_++] = head_;
+    }
+    Node<K, V>* new_node = new Node<K, V>(k ,v, node_level);
+    for (int i = level_ - 1; i >= 0; --i) {
+        new_node->forward[i] = update[i]->forward[i];
+        update[i]->forward[i] = new_node;
+    }
+    ++size_;
+}
+
+template <typename K, typename V>
+bool SkipList<K, V>::Remove(K key) {
+
 }
 
 template <typename K, typename V>
