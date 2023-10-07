@@ -79,20 +79,40 @@ bool SkipList<K, V>::Insert(K key, V value) {
     cur = cur->forward[0];
     if (cur && cur->key == key) return false;
     int node_level = RandomLevel();
+    //更新跳表的层数
     while (node_level > level_) {
         update[level_++] = head_;
     }
     Node<K, V>* new_node = new Node<K, V>(k ,v, node_level);
-    for (int i = level_ - 1; i >= 0; --i) {
+    for (int i = node_level - 1; i >= 0; --i) {
         new_node->forward[i] = update[i]->forward[i];
         update[i]->forward[i] = new_node;
     }
     ++size_;
+    return true;
 }
 
 template <typename K, typename V>
 bool SkipList<K, V>::Remove(K key) {
-
+    Node<K, V>* update[kMaxLevel];
+    Node<K, V>* cur = head_;
+    for (int i = level_ - 1; i >= 0; --i) {
+        while (cur->forward[i] && cur->forward[i]->key < key) {
+            cur = cur->forward[i];
+        }
+        update[i] = cur;
+    }
+    cur = cur->forward[0];
+    if (cur == nullptr || cur->key != key) return false;
+    for (int i = 0; i < level_; ++i) {
+        if (update[i]->forward[i] != cur) break;
+        update[i]->forward[i] = cur->forward[i];
+    }
+    while (level_ > 1 && head_->forward[level_ - 1] == nullptr) --level_;
+    
+    delete cur;
+    --size_;
+    return true;
 }
 
 template <typename K, typename V>
