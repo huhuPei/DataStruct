@@ -66,6 +66,7 @@ Node<K, V>* SkipList<K, V>::Find(K key) {
     return nullptr; 
 }
 
+
 template <typename K, typename V>
 bool SkipList<K, V>::Insert(K key, V value) {
     Node<K, V>* update[kMaxLevel];
